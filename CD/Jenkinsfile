@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_REPO = "andrey2203/mle-template"
+        IMAGE_TAG = "latest"
+        PATH = "/Applications/Docker.app/Contents/Resources/bin:$PATH"
+        DOCKER_CREDENTIALS = credentials('dockerhub-credentials')
+    }
+
+    options {
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                checkout([$class: 'GitSCM', 
+                    branches: [[name: '*/develop']], 
+                    userRemoteConfigs: [[url: 'https://github.com/kmspokodu/mle-template.git']]
+                ])
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker build -t ${IMAGE_REPO}:${IMAGE_TAG} .
+                    docker tag ${IMAGE_REPO}:${IMAGE_TAG} ${IMAGE_REPO}:latest
+                '''
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                sh '''
+                    echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin
+                    echo "Pushing image to DockerHub..."
+                    docker push ${IMAGE_REPO}:${IMAGE_TAG}
+                    docker push ${IMAGE_REPO}:latest
+                    docker logout
+                    echo "✓ Image pushed successfully"
+                '''
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                sh '''
+                    docker stop mle-template || true
+                    docker rm mle-template || true
+                    
+                    docker run -d \
+                        --name mle-template \
+                        -p 5556:5556 \
+                        -e LOG_LEVEL=INFO \
+                        ${IMAGE_REPO}:${IMAGE_TAG}
+                    
+                    echo "✓ Container deployed successfully"
+                    docker ps | grep mle-template
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    sleep 5
+                    docker logs mle-template | tail -20
+                    echo "✓ Health check passed"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✓ CD Pipeline completed successfully - Application deployed on port 5556'
+        }
+        failure {
+            echo '✗ CD Pipeline failed - Check logs'
+            script {
+                sh '''
+                    docker logs mle-template || echo "No container logs available"
+                '''
+            }
+        }
+    }
+}

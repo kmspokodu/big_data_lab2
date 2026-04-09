@@ -1,0 +1,78 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps:
+    - path: data/sonar.all-data
+      hash: md5
+      md5: 77f5ca97c7b87b3edd3639a4ebc24e5c
+      size: 87776
+      isexec: true
+    - path: src/preprocess.py
+      hash: md5
+      md5: 53b824711278b60952b1e5127c11f3c0
+      size: 3353
+    outs:
+    - path: data/Sonar_X.csv
+      hash: md5
+      md5: 6128e423682b62417aa6572599474e15
+      size: 86587
+    - path: data/Sonar_y.csv
+      hash: md5
+      md5: 56e8943c8cc40d8144d47b29762c4d58
+      size: 1141
+    - path: data/Test_Sonar_X.csv
+      hash: md5
+      md5: 2597a89f246b980c6480a702be169723
+      size: 17567
+    - path: data/Test_Sonar_y.csv
+      hash: md5
+      md5: 00b14e9d3a5767b43255bcdbeb39ca6a
+      size: 203
+    - path: data/Train_Sonar_X.csv
+      hash: md5
+      md5: 6630315ae6f0a500747d9296f077870d
+      size: 69139
+    - path: data/Train_Sonar_y.csv
+      hash: md5
+      md5: 8ff7fcabaa141e7be3fb2d8c7705b842
+      size: 889
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/Train_Sonar_X.csv
+      hash: md5
+      md5: 6630315ae6f0a500747d9296f077870d
+      size: 69139
+    - path: data/Train_Sonar_y.csv
+      hash: md5
+      md5: 8ff7fcabaa141e7be3fb2d8c7705b842
+      size: 889
+    - path: src/train.py
+      hash: md5
+      md5: be912328426c94d790d3e8b505fee2a8
+      size: 3134
+    outs:
+    - path: experiments/log_reg.sav
+      hash: md5
+      md5: dddb65e81efd55f53215e6d3a09ea39f
+      size: 1536
+  evaluate:
+    cmd: python src/predict.py -m LOG_REG -t smoke
+    deps:
+    - path: data/Test_Sonar_X.csv
+      hash: md5
+      md5: 2597a89f246b980c6480a702be169723
+      size: 17567
+    - path: data/Test_Sonar_y.csv
+      hash: md5
+      md5: 00b14e9d3a5767b43255bcdbeb39ca6a
+      size: 203
+    - path: experiments/log_reg.sav
+      hash: md5
+      md5: dddb65e81efd55f53215e6d3a09ea39f
+      size: 1536
+    - path: src/predict.py
+      hash: md5
+      md5: f7fa7e3b652042903bf358561ea0168f
+      size: 4932

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mle-template:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mle-template
+    image: kmspokodu/mle-template:latest
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data
+      - ./experiments:/app/experiments
+      - ./logs:/app/logs
+    ports:
+      - "5556:5556"
+    command: bash -c "python src/preprocess.py && python src/train.py && python src/predict.py -m LOG_REG -t smoke"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; assert os.path.isfile('experiments/log_reg.sav')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

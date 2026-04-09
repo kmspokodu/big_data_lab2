@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Input</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enter Your Prompt</h1>
+        <textarea id="prompt" placeholder="Type your prompt here..."></textarea>
+        <button onclick="sendPrompt()">Submit</button>
+        <div class="response" id="response"></div>
+    </div>
+
+    <script>
+        async function sendPrompt() {
+            const prompt = document.getElementById('prompt').value;
+            const responseDiv = document.getElementById('response');
+
+            try {
+                const res = await fetch('/api/v1/prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    responseDiv.textContent =
+                        `Prediction: ${data.prediction}\nProbabilities: ${JSON.stringify(data.probabilities)}`;
+                } else {
+                    responseDiv.textContent = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                responseDiv.textContent = 'Error: Unable to connect to the server.';
+            }
+        }
+    </script>
+</body>
+</html>
