@@ -24,9 +24,12 @@ RUN mkdir -p /app/data /app/experiments /app/logs
 # Устанавливаем права доступа
 RUN chmod +x src/*.py
 
+# Train the model during build
+RUN python src/preprocess.py && python src/train.py
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import os; assert os.path.isfile('experiments/log_reg.sav'), 'Model not found'" || exit 1
 
 # Use an entrypoint script to decide what to run
-ENTRYPOINT ["bash", "-c", "if [ \"$RUN_MODE\" = \"pipeline\" ]; then python src/preprocess.py && python src/train.py && python src/predict.py -m LOG_REG -t smoke; else python src/api.py; fi"]
+ENTRYPOINT ["bash", "-c", "if [ \"$RUN_MODE\" = \"pipeline\" ]; then python src/predict.py -m LOG_REG -t smoke; else python src/api.py; fi"]

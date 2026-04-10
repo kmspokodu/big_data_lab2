@@ -1,26 +1,56 @@
 version: '3.8'
 
 services:
-  mle-template:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mle-template
+    container_name: mle-api
     image: kmspokodu/mle-template:latest
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=INFO
+      - RUN_MODE=api
     volumes:
       - ./data:/app/data
       - ./experiments:/app/experiments
       - ./logs:/app/logs
     ports:
-      - "5556:5556"
-    command: bash -c "python src/preprocess.py && python src/train.py && python src/predict.py -m LOG_REG -t smoke"
+      - "55566:55566"
+    depends_on:
+      mongo:
+        condition: service_healthy
     restart: on-failure
     healthcheck:
-      test: ["CMD", "python", "-c", "import os; assert os.path.isfile('experiments/log_reg.sav')"]
+      test: ["CMD", "curl", "-f", "http://localhost:55566/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+
+  mongo:
+    image: mongo:5.0
+    container_name: mongodb
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+    ports:
+      - "27017:27017"
+    restart: on-failure
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
+  mongo_config:
