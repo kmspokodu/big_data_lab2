@@ -3,66 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Input</title>
+    <title>Sonar Classification API</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f4f4f9;
-        }
-        .container {
-            text-align: center;
-            background: #fff;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
         textarea {
             width: 100%;
-            height: 100px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+            height: 120px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
         }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .textarea-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
         button {
-            padding: 10px 20px;
+            width: 100%;
+            padding: 12px;
             font-size: 16px;
-            color: #fff;
-            background-color: #007BFF;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+        
         button:hover {
-            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
         .response {
-            margin-top: 20px;
-            font-size: 18px;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .response.success {
+            background: #f0f9ff;
+            border: 2px solid #10b981;
+            color: #065f46;
+            display: block;
+        }
+        
+        .response.error {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            color: #7f1d1d;
+            display: block;
+        }
+        
+        .response h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .response-item {
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .response-item strong {
             color: #333;
+        }
+        
+        .prediction-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .prediction-badge.mine {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        
+        .prediction-badge.rock {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 4px 0;
+            overflow: hidden;
+        }
+        
+        .confidence-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+        
+        .db-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .spinner {
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Enter Your Prompt</h1>
-        <textarea id="prompt" placeholder="Type your prompt here..."></textarea>
-        <button onclick="sendPrompt()">Submit</button>
+        <div class="header">
+            <h1>🎯 Sonar Classification</h1>
+            <p>Enter 60 comma-separated numbers to predict Mine (M) or Rock (R)</p>
+        </div>
+        
+        <form onsubmit="sendPrompt(event)">
+            <div class="form-group">
+                <label for="prompt">Enter Features (60 numbers)</label>
+                <textarea 
+                    id="prompt" 
+                    placeholder="0.026, 0.0363, 0.0136, 0.0272, 0.0214, ... (60 values separated by commas)"
+                    required
+                ></textarea>
+                <div class="textarea-hint">Separate numbers with commas. Example: 0.1, 0.2, 0.3, ...</div>
+            </div>
+            
+            <button type="button" onclick="loadExample()" style="background: #6b7280; margin-bottom: 10px;">📋 Load Example</button>
+            <button type="submit">🎯 Predict</button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">Processing...</p>
+            </div>
+        </form>
+        
         <div class="response" id="response"></div>
     </div>
 
     <script>
-        async function sendPrompt() {
-            const prompt = document.getElementById('prompt').value;
+        // Simple example data: 60 numbers for Sonar dataset
+        const exampleData = "0.0200,0.0371,0.0428,0.0207,0.0954,0.0986,0.1539,0.1601,0.3109,0.2111,0.2060,0.3106,0.3010,0.2267,0.4564,0.5528,0.6070,0.5371,0.4765,0.5746,0.5408,0.3385,0.3272,0.4696,0.6584,0.6333,0.5652,0.5585,0.4882,0.3957,0.3914,0.3250,0.3200,0.2267,0.1118,0.0329,0.1479,0.1547,0.1250,0.1571,0.0745,0.0605,0.0605,0.0434,0.0631,0.0914,0.0329,0.0322,0.0638,0.0502,0.0881,0.1147,0.0851,0.0782,0.0676,0.1226,0.1020,0.0574,0.0384,0.0370";
+        
+        function loadExample() {
+            const textarea = document.getElementById('prompt');
+            textarea.value = exampleData;
+            // Also validate on load to show count
+            const numbers = exampleData.split(',').map(x => x.trim()).filter(x => x !== '').length;
+            console.log(`Loaded ${numbers} numbers`);
+            textarea.focus();
+        }
+        
+        async function sendPrompt(event) {
+            event.preventDefault();
+            
+            const prompt = document.getElementById('prompt').value.trim();
             const responseDiv = document.getElementById('response');
-
+            const loading = document.getElementById('loading');
+            
+            console.log('Raw input:', prompt.substring(0, 100) + '...');
+            
+            // Split and parse numbers
+            let numbers = [];
+            try {
+                numbers = prompt
+                    .split(',')
+                    .map(x => x.trim())
+                    .filter(x => x.length > 0)
+                    .map((x, idx) => {
+                        const num = parseFloat(x);
+                        if (isNaN(num)) {
+                            throw new Error(`Value at position ${idx + 1} is not a number: "${x}"`);
+                        }
+                        return num;
+                    });
+            } catch (e) {
+                showError(responseDiv, `Parse error: ${e.message}`);
+                return;
+            }
+            
+            console.log(`Successfully parsed ${numbers.length} numbers`);
+            
+            if (numbers.length !== 60) {
+                showErrorWithDetails(responseDiv, {
+                    error: `Found ${numbers.length} numbers, but need exactly 60`,
+                    received_count: numbers.length,
+                    expected_count: 60,
+                    hint: 'Check your input - make sure all 60 values are properly separated by commas'
+                });
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            responseDiv.style.display = 'none';
+            
             try {
                 const res = await fetch('/api/v1/prompt', {
                     method: 'POST',
@@ -73,17 +314,125 @@
                 });
 
                 const data = await res.json();
+                loading.style.display = 'none';
 
                 if (res.ok) {
-                    responseDiv.textContent =
-                        `Prediction: ${data.prediction}\nProbabilities: ${JSON.stringify(data.probabilities)}`;
+                    displaySuccess(responseDiv, data);
                 } else {
-                    responseDiv.textContent = `Error: ${data.error}`;
+                    // Show detailed error from server
+                    showErrorWithDetails(responseDiv, data);
                 }
             } catch (error) {
-                responseDiv.textContent = 'Error: Unable to connect to the server.';
+                loading.style.display = 'none';
+                showError(responseDiv, 'Error connecting to server: ' + error.message);
             }
+        }
+        
+        function displaySuccess(div, data) {
+            const prediction = data.prediction;
+            const badgeClass = prediction === 'M' ? 'mine' : 'rock';
+            const predictionText = prediction === 'M' ? '⛏️ Mine (мина)' : '🪨 Rock (скала)';
+            
+            let html = `
+                <h3>✅ Prediction Result</h3>
+                <div class="prediction-badge ${badgeClass}">
+                    ${predictionText}
+                </div>
+            `;
+            
+            if (data.confidence) {
+                const confM = (data.confidence.M * 100).toFixed(2);
+                const confR = (data.confidence.R * 100).toFixed(2);
+                
+                html += `
+                    <div class="response-item">
+                        <strong>Mine (M):</strong> ${confM}%
+                        <div class="confidence-bar">
+                            <div class="confidence-bar-fill" style="width: ${confM}%"></div>
+                        </div>
+                    </div>
+                    <div class="response-item">
+                        <strong>Rock (R):</strong> ${confR}%
+                        <div class="confidence-bar">
+                            <div class="confidence-bar-fill" style="width: ${confR}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (data.interpretation) {
+                html += `<div class="response-item"><em>${data.interpretation}</em></div>`;
+            }
+            
+            if (data.model_accuracy) {
+                html += `<div class="response-item"><strong>Model Accuracy:</strong> ${data.model_accuracy}</div>`;
+            }
+            
+            if (data.db_id) {
+                html += `
+                    <div class="db-info">
+                        <strong>✓ Saved to Database</strong><br>
+                        ID: <code>${data.db_id}</code>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="db-info" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.1);">
+                        ⚠ Note: Not saved to database (MongoDB not available)
+                    </div>
+                `;
+            }
+            
+            div.innerHTML = html;
+            div.className = 'response success';
+            div.style.display = 'block';
+        }
+        
+        function showError(div, message) {
+            let errorHtml = `
+                <h3>❌ Error</h3>
+                <div class="response-item">${message}</div>
+            `;
+            
+            div.innerHTML = errorHtml;
+            div.className = 'response error';
+            div.style.display = 'block';
+        }
+        
+        function showErrorWithDetails(div, data) {
+            let errorHtml = `
+                <h3>❌ Error</h3>
+                <div class="response-item">${data.error}</div>
+            `;
+            
+            // Add specific error details
+            if (data.received_count !== undefined) {
+                errorHtml += `
+                    <div class="response-item">
+                        <strong>Received:</strong> ${data.received_count} numbers<br>
+                        <strong>Expected:</strong> ${data.expected_count} numbers
+                    </div>
+                `;
+            }
+            
+            if (data.position !== undefined) {
+                errorHtml += `
+                    <div class="response-item">
+                        <strong>Position:</strong> ${data.position}<br>
+                        <strong>Value:</strong> <code>${data.value}</code>
+                    </div>
+                `;
+            }
+            
+            if (data.hint) {
+                errorHtml += `<div class="response-item"><em>💡 ${data.hint}</em></div>`;
+            }
+            
+            div.innerHTML = errorHtml;
+            div.className = 'response error';
+            div.style.display = 'block';
         }
     </script>
 </body>
+</html>
 </html>

@@ -5,7 +5,7 @@ import os
 import json
 import pandas as pd
 import pickle
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report
 import shutil
 import sys
 import time
@@ -33,7 +33,7 @@ class Predictor():
                                  default="LOG_REG",
                                  const="LOG_REG",
                                  nargs="?",
-                                 choices=["LOG_REG", "RAND_FOREST", "KNN", "GNB", "SVM", "D_TREE"])
+                                 choices=["LOG_REG"])
         self.parser.add_argument("-t",
                                  "--tests",
                                  type=str,
@@ -51,9 +51,11 @@ class Predictor():
             self.config["SPLIT_DATA"]["X_test"], index_col=0)
         self.y_test = pd.read_csv(
             self.config["SPLIT_DATA"]["y_test"], index_col=0)
-        self.sc = StandardScaler()
-        self.X_train = self.sc.fit_transform(self.X_train)
-        self.X_test = self.sc.transform(self.X_test)
+        
+        
+        self.y_train = self.y_train.values.ravel()
+        self.y_test = self.y_test.values.ravel()
+        
         self.log.info("Predictor is ready")
 
     def predict(self) -> bool:
@@ -67,7 +69,10 @@ class Predictor():
         if args.tests == "smoke":
             try:
                 score = classifier.score(self.X_test, self.y_test)
-                print(f'{args.model} has {score} score')
+                y_pred = classifier.predict(self.X_test)
+                self.log.info(f'{args.model} Accuracy: {score:.4f}')
+                print(f'{args.model} has {score:.4f} score')
+                print(classification_report(self.y_test, y_pred))
             except Exception:
                 self.log.error(traceback.format_exc())
                 sys.exit(1)
@@ -80,11 +85,10 @@ class Predictor():
                 with open(os.path.join(tests_path, test)) as f:
                     try:
                         data = json.load(f)
-                        X = self.sc.transform(
-                            pd.json_normalize(data, record_path=['X']))
-                        y = pd.json_normalize(data, record_path=['y'])
+                        X = pd.json_normalize(data, record_path=['X'])
+                        y = pd.json_normalize(data, record_path=['y']).values.ravel()
                         score = classifier.score(X, y)
-                        print(f'{args.model} has {score} score')
+                        print(f'{args.model} has {score:.4f} score')
                     except Exception:
                         self.log.error(traceback.format_exc())
                         sys.exit(1)
@@ -95,7 +99,7 @@ class Predictor():
                         "model params": dict(self.config.items(args.model)),
                         "tests": args.tests,
                         "score": str(score),
-                        "X_test path": self.config["SPLIT_DATA"]["x_test"],
+                        "X_test path": self.config["SPLIT_DATA"]["X_test"],
                         "y_test path": self.config["SPLIT_DATA"]["y_test"],
                     }
                     date_time = datetime.fromtimestamp(time.time())
