@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_REPO = "andrey2203/mle-template"
+        IMAGE_REPO = "andrey2203/BIG_DATA_LAB2"
         IMAGE_TAG = "latest"
         PATH = "/Applications/Docker.app/Contents/Resources/bin:$PATH"
         DOCKER_CREDENTIALS = credentials('dockerhub-credentials')
@@ -18,7 +18,7 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM', 
                     branches: [[name: '*/develop']], 
-                    userRemoteConfigs: [[url: 'https://github.com/kmspokodu/mle-template.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/kmspokodu/big_data_lab2.git']]
                 ])
             }
         }
@@ -48,8 +48,8 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 sh '''
-                    docker stop mle-template || true
-                    docker rm mle-template || true
+                    docker stop big_data_lab2 || true
+                    docker rm big_data_lab2 || true
                     
                     docker run -d \
                         --name mle-template \

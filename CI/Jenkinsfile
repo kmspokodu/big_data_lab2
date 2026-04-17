@@ -15,7 +15,7 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM', 
                     branches: [[name: '*/develop']], 
-                    userRemoteConfigs: [[url: 'https://github.com/kmspokodu/mle-template.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/kmspokodu/big_data_lab2.git']]
                 ])
             }
         }
